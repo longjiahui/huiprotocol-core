@@ -1,7 +1,7 @@
 import {
   Method,
-  API as APIType,
-  PaginationAPI as PaginationAPIType,
+  APIInstance,
+  PaginationAPIInstance,
   GetAPIPathParameters,
   GetAPIReq,
   GetAPIRes,
@@ -14,7 +14,7 @@ export function createAPIType(
   request: (options: { url: string; method: Method; data?: any }) => any
 ) {
   // 柯里化、让泛型推导一部分类型（URL）
-  class API<T extends APIType> {
+  class API<T extends APIInstance> {
     url: T["path"]
     method: Method
 
@@ -42,7 +42,7 @@ export function createAPIType(
     }
   }
 
-  class PaginationAPI<T extends PaginationAPIType> extends API<T> {
+  class PaginationAPI<T extends PaginationAPIInstance> extends API<T> {
     constructor(api: T) {
       super(api)
     }
@@ -79,7 +79,7 @@ export function createAPIType(
 
 // type Key = keyof typeof urls
 export function createAPIs<
-  URLs extends Record<any, APIType | PaginationAPIType>,
+  URLs extends Record<any, APIInstance | PaginationAPIInstance>,
   Key extends keyof URLs
 >(apiType: ReturnType<typeof createAPIType>, urls: URLs) {
   return Object.keys(urls).reduce(

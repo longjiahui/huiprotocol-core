@@ -25,11 +25,6 @@ export function API<Req = void, Res = void>() {
   }
 }
 
-export type APIInstance = InstanceType<ReturnType<typeof API>>
-export type PaginationAPIInstance = InstanceType<
-  ReturnType<typeof PaginationAPI>
->
-
 export function PaginationAPI<Data, ExtraParams extends object = object>() {
   return class<Path extends PathType> extends API<
     PaginationBody & ExtraParams,
@@ -46,10 +41,17 @@ export function PaginationAPI<Data, ExtraParams extends object = object>() {
   }
 }
 
-export type GetAPIReq<T extends APIInstance> = T["_APIType"] extends typeof API<
-  infer Req,
-  any
+export type APIInstance<Req = any, Res = any> = InstanceType<
+  ReturnType<typeof API<Req, Res>>
 >
+export type PaginationAPIInstance<
+  Data = any,
+  ExtraParams extends object = object
+> = InstanceType<ReturnType<typeof PaginationAPI<Data, ExtraParams>>>
+
+export type GetAPIReq<T extends APIInstance> = IsPaginationAPI<T> extends true
+  ? PaginationBody & GetPaginationAPIData<T>
+  : T["_APIType"] extends typeof API<infer Req, any>
   ? Req
   : never
 export type GetAPIRes<T extends APIInstance> = T["_APIType"] extends typeof API<
@@ -67,11 +69,51 @@ export type GetPaginationExtraParams<T extends PaginationAPIInstance> =
   >
     ? R
     : never
-export type IsPaginationAPI<T extends APIInstance> =
-  GetAPIReq<T> extends PaginationBody ? true : false
+export type IsPaginationAPI<T extends APIInstance> = (
+  T["_APIType"] extends typeof API<infer Req, any> ? Req : never
+) extends PaginationBody
+  ? true
+  : false
 
 export function isPaginationAPI(
   api: APIInstance
 ): api is PaginationAPIInstance {
   return api._type === "PaginationAPI"
+}
+
+export function crud<Entity extends { id: string }>() {
+  return <Name extends string>(entityName: Name) => {
+    const paginationAPI = new (PaginationAPI<Entity>())(
+      () => `/${entityName}/pagination`
+    )
+    const getAPI = new (API<void, Entity>())((id) => `/${entityName}/get/${id}`)
+    const createAPI = new (API<
+      Omit<Entity, keyof Pick<Entity, "id">>,
+      Entity
+    >())(() => `/${entityName}/create`)
+    const updateAPI = new (API<Partial<Entity>, Entity>())(
+      (id) => `/${entityName}/update/${id}`
+    )
+    const deleteAPI = new (API<{ id: string }, void>())(
+      (id) => `/${entityName}/delete/${id}`
+    )
+    const ret = {
+      [`${entityName}Pagination`]: paginationAPI,
+      [`${entityName}Get`]: getAPI,
+      [`${entityName}Create`]: createAPI,
+      [`${entityName}Update`]: updateAPI,
+      [`${entityName}Delete`]: deleteAPI,
+    }
+    return ret as {
+      [k in `${Name}Pagination`]: typeof paginationAPI
+    } & {
+      [k in `${Name}Get`]: typeof getAPI
+    } & {
+      [k in `${Name}Create`]: typeof createAPI
+    } & {
+      [k in `${Name}Update`]: typeof updateAPI
+    } & {
+      [k in `${Name}Delete`]: typeof deleteAPI
+    }
+  }
 }

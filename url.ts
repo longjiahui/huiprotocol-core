@@ -94,9 +94,7 @@ export function crud<Entity extends { id: string }>() {
     const updateAPI = new (API<Partial<Entity>, Entity>())(
       (id) => `/${entityName}/update/${id}`
     )
-    const deleteAPI = new (API<{ id: string }, void>())(
-      (id) => `/${entityName}/delete/${id}`
-    )
+    const deleteAPI = new (API())((id) => `/${entityName}/delete/${id}`)
     const ret = {
       [`${entityName}Pagination`]: paginationAPI,
       [`${entityName}Get`]: getAPI,

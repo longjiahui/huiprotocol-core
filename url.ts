@@ -12,13 +12,13 @@ export function API<Req = void, Res = void>() {
       public path: Path,
       options: {
         method?: Method
-      } = {}
+      } = {},
     ) {
       const { method } = Object.assign(
         {
           method: "POST",
         } satisfies typeof options,
-        options
+        options,
       )
       this.method = method
     }
@@ -46,14 +46,15 @@ export type APIInstance<Req = any, Res = any> = InstanceType<
 >
 export type PaginationAPIInstance<
   Data = any,
-  ExtraParams extends object = object
+  ExtraParams extends object = object,
 > = InstanceType<ReturnType<typeof PaginationAPI<Data, ExtraParams>>>
 
-export type GetAPIReq<T extends APIInstance> = IsPaginationAPI<T> extends true
-  ? PaginationBody & GetPaginationAPIData<T>
-  : T["_APIType"] extends typeof API<infer Req, any>
-  ? Req
-  : never
+export type GetAPIReq<T extends APIInstance> =
+  IsPaginationAPI<T> extends true
+    ? PaginationBody & GetPaginationAPIData<T>
+    : T["_APIType"] extends typeof API<infer Req, any>
+      ? Req
+      : never
 export type GetAPIRes<T extends APIInstance> = T["_APIType"] extends typeof API<
   any,
   infer Res
@@ -76,23 +77,30 @@ export type IsPaginationAPI<T extends APIInstance> = (
   : false
 
 export function isPaginationAPI(
-  api: APIInstance
+  api: APIInstance,
 ): api is PaginationAPIInstance {
   return api._type === "PaginationAPI"
 }
 
-export function crud<Entity extends { id: string }>() {
+export function crud<
+  Entity extends { id: string },
+  OmitKeys extends keyof Entity = never,
+  GetEntity = undefined,
+>() {
   return <Name extends string>(entityName: Name) => {
     const paginationAPI = new (PaginationAPI<Entity>())(
-      () => `/${entityName}/pagination`
+      () => `/${entityName}/pagination`,
     )
-    const getAPI = new (API<void, Entity>())((id) => `/${entityName}/get/${id}`)
+    const getAPI = new (API<
+      void,
+      GetEntity extends undefined ? Entity : GetEntity
+    >())((id) => `/${entityName}/get/${id}`)
     const createAPI = new (API<
-      Omit<Entity, keyof Pick<Entity, "id">>,
+      Omit<Entity, keyof Pick<Entity, "id"> | OmitKeys>,
       Entity
     >())(() => `/${entityName}/create`)
     const updateAPI = new (API<Partial<Entity>, Entity>())(
-      (id) => `/${entityName}/update/${id}`
+      (id) => `/${entityName}/update/${id}`,
     )
     const deleteAPI = new (API())((id) => `/${entityName}/delete/${id}`)
     const ret = {

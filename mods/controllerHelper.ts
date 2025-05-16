@@ -11,9 +11,9 @@ import type { DefaultArgs } from "@prisma/client/runtime/library"
 import type { DropString, Slice } from "./types"
 
 type TypePrisma = PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>
-// type APIWithPaths<T extends APIInstance> = GetAPIPathParameters<T> extends []
-//   ? T
-//   : [T, ...GetAPIPathParameters<T>]
+type APIWithPaths<T extends APIInstance> = GetAPIPathParameters<T> extends []
+  ? T
+  : [T, ...GetAPIPathParameters<T>]
 
 function _createController(app: Application) {
   return <

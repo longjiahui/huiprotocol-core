@@ -90,17 +90,19 @@ export function crud<
     const paginationAPI = new (PaginationAPI<Entity>())(
       () => `/${entityName}/pagination`
     )
+
     const getAPI = new (API<
       void,
       GetEntity extends undefined ? Entity : GetEntity
     >())((id) => `/${entityName}/get/${id}`)
     const createAPI = new (API<
       Omit<Entity, keyof Pick<Entity, "id"> | OmitKeys>,
-      Entity
+      GetEntity extends undefined ? Entity : GetEntity
     >())(() => `/${entityName}/create`)
-    const updateAPI = new (API<Partial<Entity>, Entity>())(
-      (id) => `/${entityName}/update/${id}`
-    )
+    const updateAPI = new (API<
+      Partial<Entity>,
+      GetEntity extends undefined ? Entity : GetEntity
+    >())((id) => `/${entityName}/update/${id}`)
     const deleteAPI = new (API())((id) => `/${entityName}/delete/${id}`)
     const ret = {
       [`${entityName}Pagination`]: paginationAPI,
